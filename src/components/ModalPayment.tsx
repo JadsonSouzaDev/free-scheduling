@@ -199,7 +199,7 @@ export function ModalPayment({
   const handleOnClose = () => {
     let formattedPhone = phone.replace(/\D/g, "");
     formattedPhone = formattedPhone.replace(/^55/, "");
-    toast.error("Pagamento ainda não realizado!");
+    toast.warning("Pagamento ainda não realizado!");
     router.push(`/agendamentos?phone=${formattedPhone}`);
     setQrCodeBase64("");
     onClose();
