@@ -69,10 +69,50 @@ export async function createAppointment(input: CreateAppointmentData) {
   // return appointment;
 }
 
+export async function deleteExpiredAppointments() {
+  const sql = neon(`${process.env.DATABASE_URL}`);
+
+  await sql`
+    DELETE FROM payments
+    WHERE appointment_id IN (
+      SELECT id FROM appointments
+      WHERE status = 'waiting_payment' AND created_at < NOW() - INTERVAL '5 minutes'
+    )
+  `;
+  
+  await sql`
+    DELETE FROM appointments
+    WHERE status = 'waiting_payment' AND created_at < NOW() - INTERVAL '5 minutes'
+  `;
+}
+
 export async function getAppointments(phone: string) {
   const sql = neon(`${process.env.DATABASE_URL}`);
+
+  await deleteExpiredAppointments();
   
-  const appointments = await sql`
+  const appointments = phone === 'admin' ? await sql`
+    SELECT 
+      a.id,
+      a.client_name,
+      a.client_phone,
+      a.date,
+      a.status,
+      a.created_at,
+      a.updated_at,
+      p.id as payment_id,
+      p.external_id,
+      p.amount,
+      p.status as payment_status,
+      p.paid_at,
+      p.qr_code,
+      p.type,
+      p.created_at as payment_created_at,
+      p.updated_at as payment_updated_at
+    FROM appointments a
+    INNER JOIN payments p ON a.id = p.appointment_id
+    ORDER BY a.date ASC
+  ` : await sql`
     SELECT 
       a.id,
       a.client_name,

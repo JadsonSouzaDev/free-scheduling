@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AppointmentStatus, PaymentStatus, PaymentType } from "@/app/contexts/appointment/appointment.model";
 import { AppointmentsList } from "./AppointmentsList";
 import ModalPayment from "./ModalPayment";
+import { useRouter } from "next/navigation";
 
 type SerializedAppointment = {
   id: string;
@@ -30,6 +31,7 @@ type AppointmentsListWrapperProps = {
 }
 
 export function AppointmentsListWrapper({ appointments }: AppointmentsListWrapperProps) {
+  const router = useRouter();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<{
     phone: string;
@@ -51,6 +53,7 @@ export function AppointmentsListWrapper({ appointments }: AppointmentsListWrappe
   const handlePaymentModalClose = () => {
     setIsPaymentModalOpen(false);
     setSelectedPayment(null);
+    router.refresh();
   };
 
   // Converte os dados serializados de volta para objetos com Date

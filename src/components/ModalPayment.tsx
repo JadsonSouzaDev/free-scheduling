@@ -35,8 +35,9 @@ export function ModalPayment({
   onPaymentExpired,
   paymentData,
 }: ModalPaymentProps) {
+  const leftSeconds = Math.max(0, Math.floor((new Date(paymentData.createdAt.getTime() + 5 * 60 * 1000).getTime() - new Date().getTime()) / 1000));
   const [copied, setCopied] = React.useState(false);
-  const [timeLeft, setTimeLeft] = React.useState(300); // 5 minutos em segundos
+  const [timeLeft, setTimeLeft] = React.useState(leftSeconds); // 5 minutos em segundos
   const [progress, setProgress] = React.useState(100);
   const [qrCodeBase64, setQrCodeBase64] = React.useState<string>("");
   const router = useRouter();
@@ -111,8 +112,6 @@ export function ModalPayment({
   // Reset do timer quando o modal abre e gera o QR Code
   React.useEffect(() => {
     if (isOpen) {
-      setTimeLeft(300);
-      setProgress(100);
       generateQRCode(paymentData.pixCode);
     }
   }, [isOpen, paymentData.pixCode]);
@@ -135,6 +134,7 @@ export function ModalPayment({
       setQrCodeBase64("");
       toast.success("Pagamento realizado com sucesso!");
       router.push(`/agendamentos?phone=${formattedPhone}`);
+      onClose();
     }
   };
 
