@@ -93,7 +93,7 @@ export async function getAppointments(phone: string) {
     FROM appointments a
     INNER JOIN payments p ON a.id = p.appointment_id
     WHERE a.client_phone = ${'+55' + phone}
-    ORDER BY a.created_at DESC
+    ORDER BY a.date ASC
   `;
 
   const formattedAppointments = appointments.map((row: Record<string, unknown>) => {

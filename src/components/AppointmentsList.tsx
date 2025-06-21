@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAppointments } from "@/app/contexts/appointment/appointment.action";
+import { Button } from "@/components/ui/button";
 import { Appointment, AppointmentStatus } from "@/app/contexts/appointment/appointment.model";
 import { formatPhone } from "@/lib/phone";
 import { ConsultOtherPhoneButton } from "./ConsultOtherPhoneButton";
@@ -12,12 +12,11 @@ const appointmentStatus: Record<AppointmentStatus, string> = {
 }
 
 type AppointmentListProps = {
-  phone: string;
+  appointments: Appointment[];
+  onPaymentClick: (appointment: Appointment) => void;
 }
 
-export async function AppointmentsList({ phone }: AppointmentListProps) {  
-  const appointments = await getAppointments(phone);
-
+export function AppointmentsList({ appointments, onPaymentClick }: AppointmentListProps) {  
   const formatDateTime = (date: Date) => {
     return new Intl.DateTimeFormat('pt-BR', {
       weekday: 'long',
@@ -29,7 +28,7 @@ export async function AppointmentsList({ phone }: AppointmentListProps) {
     }).format(date);
   };
 
-  if (!appointments) {
+  if (!appointments || appointments.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4">
         <div className="text-muted-foreground">Nenhum agendamento encontrado.</div>
@@ -40,38 +39,38 @@ export async function AppointmentsList({ phone }: AppointmentListProps) {
 
   return (
     <div className="space-y-4 w-full max-w-2xl">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-center justify-between">
         <h2 className="text-2xl font-bold">Agendamentos</h2>
         <ConsultOtherPhoneButton />
       </div>
       
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {appointments.map((appointment: Appointment) => (
           <Card key={appointment.id}>
             <CardHeader>
-              <CardTitle className="text-lg">{appointment.clientName}</CardTitle>
+              <CardTitle className="mb-0">{appointment.clientName}</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="-mt-4">
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   <strong>Telefone:</strong> {formatPhone(appointment.clientPhone)}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   <strong>Data:</strong> {formatDateTime(appointment.date)}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   <strong>Status:</strong> {appointmentStatus[appointment.status as AppointmentStatus]}
                 </p>
-                {/* {appointment.payment && (
-                  <div className="mt-2 p-2 bg-muted rounded">
-                    <p className="text-xs">
-                      <strong>Pagamento:</strong> {paymentType[appointment.payment.type as PaymentType]}
-                    </p>
-                    <p className="text-xs">
-                      <strong>Valor:</strong> R$ {appointment.payment.amount}
-                    </p>
+                {appointment.status === 'waiting_payment' && (
+                  <div className="mt-4">
+                    <Button 
+                      onClick={() => onPaymentClick(appointment)}
+                      className="w-full"
+                    >
+                      Realizar Pagamento
+                    </Button>
                   </div>
-                )} */}
+                )}
               </div>
             </CardContent>
           </Card>

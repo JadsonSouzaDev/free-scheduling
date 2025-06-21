@@ -13,10 +13,12 @@ import { Copy, Check, Clock } from "lucide-react";
 import QRCode from "qrcode";
 import Image from "next/image";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface ModalPaymentProps {
   isOpen: boolean;
   onClose: () => void;
+  phone: string;
   onPaymentSuccess?: () => void;
   onPaymentExpired?: () => void;
   paymentData: {
@@ -29,6 +31,7 @@ interface ModalPaymentProps {
 export function ModalPayment({
   isOpen,
   onClose,
+  phone,
   onPaymentExpired,
   paymentData,
 }: ModalPaymentProps) {
@@ -36,7 +39,7 @@ export function ModalPayment({
   const [timeLeft, setTimeLeft] = React.useState(300); // 5 minutos em segundos
   const [progress, setProgress] = React.useState(100);
   const [qrCodeBase64, setQrCodeBase64] = React.useState<string>("");
-
+  const router = useRouter();
   // Função para gerar o QR Code em base64
   const generateQRCode = async (pixCode: string) => {
     try {
@@ -122,12 +125,16 @@ export function ModalPayment({
   };
 
   const handleOnClose = () => {
+    let formattedPhone = phone.replace(/\D/g, "");
+    formattedPhone = formattedPhone.replace(/^55/, "");
     if (timeLeft > 0) {
       toast.error("Pagamento ainda não realizado!");
-    } else {
+      router.push(`/agendamentos?phone=${formattedPhone}`);
       onClose();
+    } else {
       setQrCodeBase64("");
       toast.success("Pagamento realizado com sucesso!");
+      router.push(`/agendamentos?phone=${formattedPhone}`);
     }
   };
 

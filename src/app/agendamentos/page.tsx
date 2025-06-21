@@ -1,20 +1,47 @@
-import { AppointmentsList } from "@/components/AppointmentsList"
+import { AppointmentsListWrapper } from "@/components/AppointmentsListWrapper"
 import { PhoneModalWrapper } from "@/components/PhoneModalWrapper"
+import { getAppointments } from "@/app/contexts/appointment/appointment.action"
 
 interface AppointmentsPageProps {
-  searchParams: { phone?: string }
+  searchParams: Promise<{ phone?: string }>
 }
 
-export default function AppointmentsPage({ searchParams }: AppointmentsPageProps) {
-  const phone = searchParams.phone;
+export default async function AppointmentsPage({ searchParams }: AppointmentsPageProps) {
+  const { phone } = await searchParams;
+
+  if (!phone) {
+    return (
+      <PhoneModalWrapper />
+    )
+  }
+
+  const appointments = await getAppointments(phone);
+
+  // Serializa os dados para objetos planos
+  const serializedAppointments = appointments?.map(appointment => ({
+    id: appointment.id,
+    clientName: appointment.clientName,
+    clientPhone: appointment.clientPhone,
+    date: appointment.date.toISOString(),
+    status: appointment.status,
+    createdAt: appointment.createdAt.toISOString(),
+    updatedAt: appointment.updatedAt.toISOString(),
+    payment: {
+      id: appointment.payment.id,
+      externalId: appointment.payment.externalId,
+      amount: appointment.payment.amount,
+      status: appointment.payment.status,
+      paidAt: appointment.payment.paidAt?.toISOString() || null,
+      qrCode: appointment.payment.qrCode,
+      type: appointment.payment.type,
+      createdAt: appointment.payment.createdAt.toISOString(),
+      updatedAt: appointment.payment.updatedAt.toISOString(),
+    }
+  })) || [];
 
   return (
-    <main className="flex p-4 flex-col items-center justify-center min-h-screen pb-24">
-      {phone ? (
-        <AppointmentsList phone={phone} />
-      ) : (
-        <PhoneModalWrapper />
-      )}
-    </main>
+   
+      <AppointmentsListWrapper appointments={serializedAppointments} />
+   
   )
 } 

@@ -38,8 +38,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased `}
       >
         <Providers>
-          {children}
-          <Navbar />
+          <main className="flex p-2 flex-col items-center justify-center pb-20">
+            {children}
+          </main>
+            <Navbar />
           <Toaster />
         </Providers>
       </body>

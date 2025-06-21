@@ -27,7 +27,7 @@ export function MainCalendar() {
     Date | undefined
   >(undefined);
   const [qrCode, setQrCode] = React.useState<string | undefined>(undefined);
-
+  const [phone, setPhone] = React.useState<string | undefined>(undefined);
   const handleSchedule = () => {
     if (!date || !time) {
       return;
@@ -48,8 +48,9 @@ export function MainCalendar() {
     setIsConfirmModalOpen(false);
   };
 
-  const handleFormSubmit = (data: { qrCode: string }) => {
+  const handleFormSubmit = (data: { qrCode: string, phone: string }) => {
     setIsPaymentModalOpen(true);
+    setPhone(data.phone);
     setQrCode(data.qrCode);
   };
 
@@ -105,6 +106,7 @@ export function MainCalendar() {
 
       <ModalPayment
         isOpen={isPaymentModalOpen}
+        phone={phone!}
         onClose={handlePaymentModalClose}
         onPaymentSuccess={() => {
           // Lógica quando o pagamento for confirmado
