@@ -154,7 +154,7 @@ export function ModalPayment({
 
       // Cria nova conexão
       eventSource = new EventSource(
-        `/api/webhooks/paggue?appointmentId=${appointmentId}`
+        `/api/webhooks/asaas?appointmentId=${appointmentId}`
       );
 
       eventSource.onmessage = async (event) => {

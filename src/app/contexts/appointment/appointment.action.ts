@@ -1,7 +1,7 @@
 "use server";
 
 import { neon } from "@neondatabase/serverless";
-import { PaggueGateway } from "@/app/gateways/paggue.gateway";
+import { AsaasGateway } from "@/app/gateways/asaas.gateway";
 import {
   Appointment,
   AppointmentData,
@@ -30,15 +30,14 @@ export async function createAppointment(input: CreateAppointmentData) {
         RETURNING *
     `) as [AppointmentData];
 
-  const paggueGateway = PaggueGateway.getInstance();
-  const pagguePayment = await paggueGateway.createPayment({
-    payer_name: input.client_name,
+  const asaasGateway = AsaasGateway.getInstance();
+  const asaasPayment = await asaasGateway.createPayment({
     amount: APPOINTMENT_AMOUNT,
     external_id: appointmentData.id,
     description: `Pagamento de sinal de agendamento do cliente ${input.client_name}, com o telefone ${input.client_phone} no valor de R$${APPOINTMENT_AMOUNT}`,
   });
 
-  if (!pagguePayment?.hash || !pagguePayment?.payment) {
+  if (!asaasPayment?.id || !asaasPayment?.payload) {
     await sql`
       DELETE FROM appointments
       WHERE id = ${appointmentData.id}
@@ -49,7 +48,7 @@ export async function createAppointment(input: CreateAppointmentData) {
 
   const [paymentData] = (await sql`
         INSERT INTO payments (appointment_id, external_id, amount, status, qr_code, type)
-        VALUES (${appointmentData.id}, ${pagguePayment.hash}, ${APPOINTMENT_AMOUNT}, 'pending', ${pagguePayment.payment}, 'pix')
+        VALUES (${appointmentData.id}, ${asaasPayment.id}, ${APPOINTMENT_AMOUNT}, 'pending', ${asaasPayment.payload}, 'pix')
         RETURNING *
     `) as [PaymentData];
 
@@ -63,7 +62,7 @@ export async function createAppointment(input: CreateAppointmentData) {
     updated_at: appointmentData.updated_at,
     payment: {
       id: paymentData.id,
-      external_id: pagguePayment.external_id,
+      external_id: asaasPayment.id,
       amount: paymentData.amount,
       status: paymentData.status,
       paid_at: paymentData.paid_at,
