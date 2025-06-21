@@ -59,7 +59,7 @@ export function MainCalendar() {
 
   return (
     <>
-      <Card className="w-full max-w-md border-none shadow-none md:shadow-lg md:border">
+      <Card className="w-full max-w-md border-none shadow-lg">
         <CardHeader>
           <CardTitle>Agendamento</CardTitle>
           <CardDescription>Encontre uma data e horário</CardDescription>

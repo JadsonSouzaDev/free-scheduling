@@ -69,7 +69,7 @@ export async function createAppointment(input: CreateAppointmentData) {
   // return appointment;
 }
 
-export async function getAppointments() {
+export async function getAppointments(phone: string) {
   const sql = neon(`${process.env.DATABASE_URL}`);
   
   const appointments = await sql`
@@ -92,6 +92,7 @@ export async function getAppointments() {
       p.updated_at as payment_updated_at
     FROM appointments a
     INNER JOIN payments p ON a.id = p.appointment_id
+    WHERE a.client_phone = ${'+55' + phone}
     ORDER BY a.created_at DESC
   `;
 

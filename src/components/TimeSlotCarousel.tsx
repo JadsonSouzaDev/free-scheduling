@@ -99,7 +99,7 @@ export function TimeSlotCarousel({ onTimeSelect }: TimeSlotCarouselProps) {
       {/* Horário selecionado */}
       {selectedTime && (
         <div className="mb-4">
-          <p className="text-sm text-muted-foreground">Horário selecionado</p>
+          {/* <p className="text-sm text-muted-foreground">Horário selecionado: {selectedTime}</p> */}
           {/* <p className="text-xl font-bold text-primary">{selectedTime}</p> */}
         </div>
       )}

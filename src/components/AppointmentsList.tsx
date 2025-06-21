@@ -1,22 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAppointments } from "@/app/contexts/appointment/appointment.action";
-import { Appointment, AppointmentStatus, PaymentType } from "@/app/contexts/appointment/appointment.model";
+import { Appointment, AppointmentStatus } from "@/app/contexts/appointment/appointment.model";
 import { formatPhone } from "@/lib/phone";
+import { ConsultOtherPhoneButton } from "./ConsultOtherPhoneButton";
 
 const appointmentStatus: Record<AppointmentStatus, string> = {
-  waiting_payment: "Pendente de pagamento",
+  waiting_payment: "Pagamento pendente",
   paid: "Pago",
   completed: "Completo",    
   cancelled: "Cancelado",
 }
 
-const paymentType: Record<PaymentType, string> = {
-  pix: "PIX",
-  manual: "Manual",
+type AppointmentListProps = {
+  phone: string;
 }
 
-export async function AppointmentsList() {  
-  const appointments = await getAppointments();
+export async function AppointmentsList({ phone }: AppointmentListProps) {  
+  const appointments = await getAppointments(phone);
 
   const formatDateTime = (date: Date) => {
     return new Intl.DateTimeFormat('pt-BR', {
@@ -31,22 +31,18 @@ export async function AppointmentsList() {
 
   if (!appointments) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-muted-foreground">Nenhum appointment encontrado.</div>
+      <div className="flex flex-col items-center justify-center p-8 space-y-4">
+        <div className="text-muted-foreground">Nenhum agendamento encontrado.</div>
+        <ConsultOtherPhoneButton />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full max-w-2xl">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Appointments</h2>
-        {/* <button
-          onClick={() => {}}
-          className="text-sm text-blue-600 hover:text-blue-800"
-        >
-          Atualizar
-        </button> */}
+        <h2 className="text-2xl font-bold">Agendamentos</h2>
+        <ConsultOtherPhoneButton />
       </div>
       
       <div className="grid gap-4">
@@ -66,7 +62,7 @@ export async function AppointmentsList() {
                 <p className="text-sm text-muted-foreground">
                   <strong>Status:</strong> {appointmentStatus[appointment.status as AppointmentStatus]}
                 </p>
-                {appointment.payment && (
+                {/* {appointment.payment && (
                   <div className="mt-2 p-2 bg-muted rounded">
                     <p className="text-xs">
                       <strong>Pagamento:</strong> {paymentType[appointment.payment.type as PaymentType]}
@@ -75,7 +71,7 @@ export async function AppointmentsList() {
                       <strong>Valor:</strong> R$ {appointment.payment.amount}
                     </p>
                   </div>
-                )}
+                )} */}
               </div>
             </CardContent>
           </Card>
