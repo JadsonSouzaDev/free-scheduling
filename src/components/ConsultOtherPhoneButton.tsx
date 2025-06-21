@@ -1,9 +1,12 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+
 
 export function ConsultOtherPhoneButton() {
+  const router = useRouter();
   const handleClick = () => {
-    window.location.href = '/agendamentos';
+    router.push('/agendamentos');
   };
 
   return (
@@ -11,7 +14,7 @@ export function ConsultOtherPhoneButton() {
       variant="outline" 
       onClick={handleClick}
     >
-      Consultar outro telefone
+      Mudar telefone
     </Button>
   );
 } 

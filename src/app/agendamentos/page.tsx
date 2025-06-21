@@ -3,11 +3,12 @@ import { PhoneModalWrapper } from "@/components/PhoneModalWrapper"
 import { getAppointments } from "@/app/contexts/appointment/appointment.action"
 
 interface AppointmentsPageProps {
-  searchParams: Promise<{ phone?: string }>
+  searchParams: Promise<{ phone?: string; date?: string }>
 }
 
 export default async function AppointmentsPage({ searchParams }: AppointmentsPageProps) {
-  const { phone } = await searchParams;
+  const { phone, date } = await searchParams;
+  // const isAdm = phone === 'admin';
 
   if (!phone) {
     return (
@@ -15,7 +16,7 @@ export default async function AppointmentsPage({ searchParams }: AppointmentsPag
     )
   }
 
-  const appointments = await getAppointments(phone);
+  const appointments = await getAppointments(phone, date);
 
   // Serializa os dados para objetos planos
   const serializedAppointments = appointments?.map(appointment => ({
@@ -39,8 +40,7 @@ export default async function AppointmentsPage({ searchParams }: AppointmentsPag
     }
   })) || [];
 
-  return (
-   
+  return (   
       <AppointmentsListWrapper appointments={serializedAppointments} />
    
   )

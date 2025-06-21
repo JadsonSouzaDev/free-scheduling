@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AppointmentStatus, PaymentStatus, PaymentType } from "@/app/contexts/appointment/appointment.model";
 import { AppointmentsList } from "./AppointmentsList";
 import ModalPayment from "./ModalPayment";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type SerializedAppointment = {
   id: string;
@@ -32,6 +32,7 @@ type AppointmentsListWrapperProps = {
 
 export function AppointmentsListWrapper({ appointments }: AppointmentsListWrapperProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<{
     appointmentId: string;
@@ -40,6 +41,35 @@ export function AppointmentsListWrapper({ appointments }: AppointmentsListWrappe
     amount: number;
     createdAt: Date;
   } | null>(null);
+
+  // Obtém a data atual do searchParams
+  const currentDate = searchParams.get('date');
+
+  // Converte a data do searchParams para Date sem problemas de timezone
+  const getSelectedDate = () => {
+    if (!currentDate) return undefined;
+    
+    // Parse da string YYYY-MM-DD para criar Date no timezone local
+    const [year, month, day] = currentDate.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    const params = new URLSearchParams(searchParams);
+    
+    if (date) {
+      // Usa a data local sem conversão de timezone
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+      params.set('date', dateString);
+    } else {
+      params.delete('date');
+    }
+    
+    router.push(`/agendamentos?${params.toString()}`);
+  };
 
   const handlePaymentClick = (appointment: SerializedAppointment) => {
     setSelectedPayment({
@@ -92,6 +122,8 @@ export function AppointmentsListWrapper({ appointments }: AppointmentsListWrappe
           };
           handlePaymentClick(serializedAppointment);
         }}
+        selectedDate={getSelectedDate()}
+        onDateChange={handleDateChange}
       />
 
       {selectedPayment && (

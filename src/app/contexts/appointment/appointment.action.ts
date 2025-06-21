@@ -96,10 +96,21 @@ export async function deleteExpiredAppointments() {
   `;
 }
 
-export async function getAppointments(phone: string) {
+export async function getAppointments(phone: string, dateFilter?: string) {
   const sql = neon(`${process.env.DATABASE_URL}`);
 
   await deleteExpiredAppointments();
+
+  // Se dateFilter for fornecido, converte para Date e cria filtros de data
+  let startOfDay: Date | undefined;
+  let endOfDay: Date | undefined;
+  
+  if (dateFilter) {
+    // Cria a data no timezone local para evitar problemas de UTC
+    const [year, month, day] = dateFilter.split('-').map(Number);
+    startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+    endOfDay = new Date(year, month - 1, day + 1, 0, 0, 0, 0);
+  }
 
   const appointments =
     phone === "admin"
@@ -123,6 +134,7 @@ export async function getAppointments(phone: string) {
       p.updated_at as payment_updated_at
     FROM appointments a
     INNER JOIN payments p ON a.id = p.appointment_id
+    WHERE 1=1 ${startOfDay && endOfDay ? sql`AND a.date >= ${startOfDay} AND a.date < ${endOfDay}` : sql``}
     ORDER BY a.date ASC
   `
       : await sql`
@@ -145,7 +157,7 @@ export async function getAppointments(phone: string) {
       p.updated_at as payment_updated_at
     FROM appointments a
     INNER JOIN payments p ON a.id = p.appointment_id
-    WHERE a.client_phone = ${"+55" + phone}
+    WHERE a.client_phone = ${"+55" + phone} ${startOfDay && endOfDay ? sql`AND a.date >= ${startOfDay} AND a.date < ${endOfDay}` : sql``}
     ORDER BY a.date ASC
   `;
 
