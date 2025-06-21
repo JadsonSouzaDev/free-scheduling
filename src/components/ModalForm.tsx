@@ -11,17 +11,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useCreateAppointment } from "@/app/contexts/appointment/appointment.hooks";
 
 interface ModalFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { name: string; phone: string }) => void;
+  onSubmit: (data: { qrCode: string }) => void;
   selectedDateTime?: Date;
 }
 
 export function ModalForm({ isOpen, onClose, onSubmit, selectedDateTime }: ModalFormProps) {
   const [name, setName] = React.useState("");
   const [phone, setPhone] = React.useState("");
+  const { createAppointment, isCreating } = useCreateAppointment();
 
   const formatPhone = (value: string) => {
     // Remove tudo que não é dígito
@@ -44,14 +46,31 @@ export function ModalForm({ isOpen, onClose, onSubmit, selectedDateTime }: Modal
     setPhone(formatted);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim() && phone.replace(/\D/g, "").length === 11) {
-      onSubmit({ name: name.trim(), phone });
+    
+    if (!name.trim() || phone.replace(/\D/g, "").length !== 11 || !selectedDateTime) {
+      return;
+    }
+    
+    try {
+      // Chama a action do servidor via SWR
+      const qrCode = await createAppointment({
+        client_name: name.trim(),
+        client_phone: phone,
+        date: selectedDateTime,
+      });
+
+      // Chama o callback do componente pai
+      onSubmit({ qrCode });
+      
       // Limpa os campos após o envio
       setName("");
       setPhone("");
       onClose();
+    } catch (error) {
+      console.error("Erro ao criar appointment:", error);
+      // Aqui você pode adicionar um toast ou notificação de erro
     }
   };
 
@@ -101,6 +120,7 @@ export function ModalForm({ isOpen, onClose, onSubmit, selectedDateTime }: Modal
               onChange={(e) => setName(e.target.value)}
               placeholder="Digite seu nome completo"
               required
+              disabled={isCreating}
             />
           </div>
           <div className="space-y-2">
@@ -113,17 +133,18 @@ export function ModalForm({ isOpen, onClose, onSubmit, selectedDateTime }: Modal
               placeholder="(99) 99999-9999"
               required
               maxLength={15}
+              disabled={isCreating}
             />
           </div>
           <DialogFooter className="flex justify-end mt-6">
-            <Button type="button" variant="outline" onClick={handleCancel}>
+            <Button type="button" variant="outline" onClick={handleCancel} disabled={isCreating}>
               Cancelar
             </Button>
             <Button 
               type="submit" 
-              disabled={!name.trim() || phone.replace(/\D/g, "").length !== 11}
+              disabled={!name.trim() || phone.replace(/\D/g, "").length !== 11 || isCreating}
             >
-              Confirmar Agendamento
+              {isCreating ? "Criando..." : "Confirmar Agendamento"}
             </Button>
           </DialogFooter>
         </form>

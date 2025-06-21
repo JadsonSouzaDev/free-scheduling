@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Copy, Check, Clock } from "lucide-react";
+import QRCode from "qrcode";
 import Image from "next/image";
 
 interface ModalPaymentProps {
@@ -18,7 +19,6 @@ interface ModalPaymentProps {
   onPaymentSuccess?: () => void;
   onPaymentExpired?: () => void;
   paymentData: {
-    qrCodeImage: string; // base64 da imagem do QR Code
     pixCode: string;
     amount: number;
     createdAt: Date;
@@ -34,6 +34,24 @@ export function ModalPayment({
   const [copied, setCopied] = React.useState(false);
   const [timeLeft, setTimeLeft] = React.useState(300); // 5 minutos em segundos
   const [progress, setProgress] = React.useState(100);
+  const [qrCodeBase64, setQrCodeBase64] = React.useState<string>("");
+
+  // Função para gerar o QR Code em base64
+  const generateQRCode = async (pixCode: string) => {
+    try {
+      const qrCodeDataURL = await QRCode.toDataURL(pixCode, {
+        width: 128,
+        margin: 2,
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF"
+        }
+      });
+      setQrCodeBase64(qrCodeDataURL);
+    } catch (err) {
+      console.error("Erro ao gerar QR Code:", err);
+    }
+  };
 
   // Função para copiar o código PIX
   const copyPixCode = async () => {
@@ -86,13 +104,14 @@ export function ModalPayment({
     setProgress(percentage);
   }, [timeLeft]);
 
-  // Reset do timer quando o modal abre
+  // Reset do timer quando o modal abre e gera o QR Code
   React.useEffect(() => {
     if (isOpen) {
       setTimeLeft(300);
       setProgress(100);
+      generateQRCode(paymentData.pixCode);
     }
-  }, [isOpen]);
+  }, [isOpen, paymentData.pixCode]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -144,17 +163,19 @@ export function ModalPayment({
             <CardContent className="p-6">
               <div className="text-center space-y-4">
                 <div className="bg-gray-100 p-4 rounded-lg inline-block">
-                  <Image
-                    src={paymentData.qrCodeImage}
-                    alt="QR Code PIX"
-                    className="w-32 h-32 object-contain"
-                    width={128}
-                    height={128}
-                  />
+                  {qrCodeBase64 && (
+                    <Image
+                      src={qrCodeBase64}
+                      alt="QR Code PIX"
+                      className="w-32 h-32 object-contain"
+                      width={128}
+                      height={128}
+                    />
+                  )}
                 </div>
-                {/* <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Escaneie o QR Code com seu app de pagamentos
-                </p> */}
+                </p>
               </div>
             </CardContent>
           </Card>

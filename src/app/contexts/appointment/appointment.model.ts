@@ -28,6 +28,16 @@ export type PaymentData = {
   updated_at: Date;
 }
 
+export type AppointmentData = {
+  id: string;
+  client_name: string;
+  client_phone: string;
+  date: Date;
+  status: AppointmentStatus;
+  created_at: Date;
+  updated_at: Date;
+};
+
 export type AppointmentConstructorData = {
   id: string;
   client_name: string;
