@@ -59,25 +59,27 @@ export function MainCalendar() {
 
   return (
     <>
-      <Card>
+      <Card className="w-full max-w-md border-none shadow-none md:shadow-lg md:border">
         <CardHeader>
           <CardTitle>Agendamento</CardTitle>
           <CardDescription>Encontre uma data e horário</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col space-y-3 items-center">
-          <Calendar
-            locale={ptBR}
-            mode="single"
-            month={month}
-            onMonthChange={setMonth}
-            selected={date}
-            onSelect={setDate}
-            className="bg-transparent p-0 w-full"
-            disabled={(date) => {
-              return date.getTime() < today.getTime();
-            }}
-          />
-          <div className="space-y-3">
+        <CardContent className="flex flex-col items-center gap-3">
+          <div className="flex">
+            <Calendar
+              locale={ptBR}
+              mode="single"
+              month={month}
+              onMonthChange={setMonth}
+              selected={date}
+              className="p-0 m-0"
+              onSelect={setDate}
+              disabled={(date) => {
+                return date.getTime() < today.getTime();
+              }}
+            />
+          </div>
+          <div className="flex w-full">
             <TimeSlotCarousel onTimeSelect={setTime} />
           </div>
         </CardContent>

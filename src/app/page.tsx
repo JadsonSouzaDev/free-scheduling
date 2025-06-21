@@ -1,13 +1,14 @@
 import { MainCalendar } from "@/components/MainCalendar"
+import { Navbar } from "@/components/Navbar"
 // import { AppointmentsList } from "@/components/AppointmentsList"
 
 export default function Home() {
   return (
-    <div className="flex p-2 flex-col items-center justify-center min-h-screen font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-16">
+    <main className="flex p-2 flex-col items-center justify-center">
+      
       <MainCalendar/>
       {/* <AppointmentsList/> */}
-      </main>
+      
       {/* <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
         <a
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
@@ -55,6 +56,8 @@ export default function Home() {
           Go to nextjs.org →
         </a>
       </footer> */}
-    </div>
+
+      <Navbar />
+    </main>
   );
 }

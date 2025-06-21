@@ -95,7 +95,7 @@ export function TimeSlotCarousel({ onTimeSelect }: TimeSlotCarouselProps) {
   };
 
   return (
-    <div className="w-full max-w-sm mx-auto">
+    <div className="w-full">
       {/* Horário selecionado */}
       {selectedTime && (
         <div className="mb-4">

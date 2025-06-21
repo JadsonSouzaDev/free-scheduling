@@ -120,3 +120,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Desabilitar zoom por gestos de pinça */
+html, body {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevenir zoom em inputs e textareas */
+input, textarea, select {
+  touch-action: manipulation;
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
