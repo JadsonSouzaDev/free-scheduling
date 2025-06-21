@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Copy, Check, Clock } from "lucide-react";
 import QRCode from "qrcode";
 import Image from "next/image";
+import { toast } from "sonner";
 
 interface ModalPaymentProps {
   isOpen: boolean;
@@ -120,8 +121,18 @@ export function ModalPayment({
     }).format(value);
   };
 
+  const handleOnClose = () => {
+    if (timeLeft > 0) {
+      toast.error("Pagamento ainda não realizado!");
+    } else {
+      onClose();
+      setQrCodeBase64("");
+      toast.success("Pagamento realizado com sucesso!");
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleOnClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-start">Pagamento via PIX</DialogTitle>

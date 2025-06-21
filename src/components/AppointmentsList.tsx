@@ -1,10 +1,22 @@
-"use client";
-
-import { useAppointments } from "@/app/contexts/appointment/appointment.hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAppointments } from "@/app/contexts/appointment/appointment.action";
+import { Appointment, AppointmentStatus, PaymentType } from "@/app/contexts/appointment/appointment.model";
+import { formatPhone } from "@/lib/phone";
 
-export function AppointmentsList() {
-  const { appointments, isLoading, error, mutate } = useAppointments();
+const appointmentStatus: Record<AppointmentStatus, string> = {
+  waiting_payment: "Pendente de pagamento",
+  paid: "Pago",
+  completed: "Completo",    
+  cancelled: "Cancelado",
+}
+
+const paymentType: Record<PaymentType, string> = {
+  pix: "PIX",
+  manual: "Manual",
+}
+
+export async function AppointmentsList() {  
+  const appointments = await getAppointments();
 
   const formatDateTime = (date: Date) => {
     return new Intl.DateTimeFormat('pt-BR', {
@@ -17,25 +29,7 @@ export function AppointmentsList() {
     }).format(date);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-muted-foreground">Carregando appointments...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-red-500">
-          Erro ao carregar appointments: {error.message}
-        </div>
-      </div>
-    );
-  }
-
-  if (appointments.length === 0) {
+  if (!appointments) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-muted-foreground">Nenhum appointment encontrado.</div>
@@ -47,16 +41,16 @@ export function AppointmentsList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Appointments</h2>
-        <button
-          onClick={() => mutate()}
+        {/* <button
+          onClick={() => {}}
           className="text-sm text-blue-600 hover:text-blue-800"
         >
           Atualizar
-        </button>
+        </button> */}
       </div>
       
       <div className="grid gap-4">
-        {appointments.map((appointment) => (
+        {appointments.map((appointment: Appointment) => (
           <Card key={appointment.id}>
             <CardHeader>
               <CardTitle className="text-lg">{appointment.clientName}</CardTitle>
@@ -64,18 +58,18 @@ export function AppointmentsList() {
             <CardContent>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Telefone:</strong> {appointment.clientPhone}
+                  <strong>Telefone:</strong> {formatPhone(appointment.clientPhone)}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   <strong>Data:</strong> {formatDateTime(appointment.date)}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  <strong>Status:</strong> {appointment.status}
+                  <strong>Status:</strong> {appointmentStatus[appointment.status as AppointmentStatus]}
                 </p>
                 {appointment.payment && (
                   <div className="mt-2 p-2 bg-muted rounded">
                     <p className="text-xs">
-                      <strong>Pagamento:</strong> {appointment.payment.status}
+                      <strong>Pagamento:</strong> {paymentType[appointment.payment.type as PaymentType]}
                     </p>
                     <p className="text-xs">
                       <strong>Valor:</strong> R$ {appointment.payment.amount}

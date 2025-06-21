@@ -3,7 +3,7 @@ export const serializePhone = (phone: string) => {
 };
 
 export const formatPhone = (phone: string) => {
-  const numbers = phone.replace(/\D/g, "");
+  const numbers = phone.replace(/\D/g, "").slice(2);
   if (numbers.length <= 2) {
     return `(${numbers}`;
   } else if (numbers.length <= 7) {

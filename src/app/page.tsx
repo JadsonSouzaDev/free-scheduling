@@ -1,10 +1,12 @@
 import { MainCalendar } from "@/components/MainCalendar"
+// import { AppointmentsList } from "@/components/AppointmentsList"
 
 export default function Home() {
   return (
     <div className="flex p-2 flex-col items-center justify-center min-h-screen font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-16">
       <MainCalendar/>
+      {/* <AppointmentsList/> */}
       </main>
       {/* <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
         <a
