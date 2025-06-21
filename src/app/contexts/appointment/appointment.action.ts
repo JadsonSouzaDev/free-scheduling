@@ -38,6 +38,15 @@ export async function createAppointment(input: CreateAppointmentData) {
     description: `Pagamento de sinal de agendamento do cliente ${input.client_name}, com o telefone ${input.client_phone} no valor de R$${APPOINTMENT_AMOUNT}`,
   });
 
+  if (!pagguePayment?.hash || !pagguePayment?.payment) {
+    await sql`
+      DELETE FROM appointments
+      WHERE id = ${appointmentData.id}
+    `;
+
+    throw new Error("Erro ao criar pagamento");
+  }
+
   const [paymentData] = (await sql`
         INSERT INTO payments (appointment_id, external_id, amount, status, qr_code, type)
         VALUES (${appointmentData.id}, ${pagguePayment.hash}, ${APPOINTMENT_AMOUNT}, 'pending', ${pagguePayment.payment}, 'pix')

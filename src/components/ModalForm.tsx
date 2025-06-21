@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateAppointment } from "@/app/contexts/appointment/appointment.hooks";
+import { toast } from "sonner";
 
 interface ModalFormProps {
   isOpen: boolean;
@@ -70,6 +71,7 @@ export function ModalForm({ isOpen, onClose, onSubmit, selectedDateTime }: Modal
       onClose();
     } catch (error) {
       console.error("Erro ao criar appointment:", error);
+      toast.error("Erro ao criar agendamento");
       // Aqui você pode adicionar um toast ou notificação de erro
     }
   };
