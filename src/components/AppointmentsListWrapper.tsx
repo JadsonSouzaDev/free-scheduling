@@ -28,9 +28,10 @@ type SerializedAppointment = {
 
 type AppointmentsListWrapperProps = {
   appointments: SerializedAppointment[];
+  isAdmin: boolean;
 }
 
-export function AppointmentsListWrapper({ appointments }: AppointmentsListWrapperProps) {
+export function AppointmentsListWrapper({ appointments, isAdmin }: AppointmentsListWrapperProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -124,6 +125,7 @@ export function AppointmentsListWrapper({ appointments }: AppointmentsListWrappe
         }}
         selectedDate={getSelectedDate()}
         onDateChange={handleDateChange}
+        isAdmin={isAdmin}
       />
 
       {selectedPayment && (

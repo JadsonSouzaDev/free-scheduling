@@ -208,7 +208,7 @@ export async function updatePaymentStatus(
   // update the payment status to paid
   await sql`
     UPDATE payments
-    SET status = ${status}
+    SET status = ${status}, paid_at = NOW()
     WHERE external_id = ${paymentId}
   `;
 
@@ -231,6 +231,35 @@ export async function updateAppointmentStatus(
   await sql`
     UPDATE appointments
     SET status = ${status}
+    WHERE id = ${appointmentId}
+  `;
+}
+
+export async function payManually(appointmentId: string) {
+  const sql = neon(`${process.env.DATABASE_URL}`);
+
+  // Atualiza o status do pagamento para paid
+  await sql`
+    UPDATE payments
+    SET status = 'paid', paid_at = NOW(), type = 'manual'
+    WHERE appointment_id = ${appointmentId}
+  `;
+
+  // Atualiza o status do agendamento para paid
+  await sql`
+    UPDATE appointments
+    SET status = 'paid'
+    WHERE id = ${appointmentId}
+  `;
+}
+
+export async function completeAppointment(appointmentId: string) {
+  const sql = neon(`${process.env.DATABASE_URL}`);
+
+  // Atualiza o status do agendamento para completed
+  await sql`
+    UPDATE appointments
+    SET status = 'completed'
     WHERE id = ${appointmentId}
   `;
 }

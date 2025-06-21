@@ -8,7 +8,7 @@ interface AppointmentsPageProps {
 
 export default async function AppointmentsPage({ searchParams }: AppointmentsPageProps) {
   const { phone, date } = await searchParams;
-  // const isAdm = phone === 'admin';
+  const isAdmin = phone === 'admin';
 
   if (!phone) {
     return (
@@ -41,7 +41,7 @@ export default async function AppointmentsPage({ searchParams }: AppointmentsPag
   })) || [];
 
   return (   
-      <AppointmentsListWrapper appointments={serializedAppointments} />
+      <AppointmentsListWrapper appointments={serializedAppointments} isAdmin={isAdmin} />
    
   )
 } 

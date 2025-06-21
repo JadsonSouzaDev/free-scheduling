@@ -1,9 +1,13 @@
+"use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Appointment, AppointmentStatus } from "@/app/contexts/appointment/appointment.model";
 import { formatPhone } from "@/lib/phone";
 import { ConsultOtherPhoneButton } from "./ConsultOtherPhoneButton";
 import { DateFilter } from "./DateFilter";
+import { payManually, completeAppointment } from "@/app/contexts/appointment/appointment.action";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const appointmentStatus: Record<AppointmentStatus, string> = {
   waiting_payment: "Pagamento pendente",
@@ -17,9 +21,12 @@ type AppointmentListProps = {
   onPaymentClick: (appointment: Appointment) => void;
   selectedDate?: Date;
   onDateChange: (date: Date | undefined) => void;
+  isAdmin: boolean;
 }
 
-export function AppointmentsList({ appointments, onPaymentClick, selectedDate, onDateChange }: AppointmentListProps) {  
+export function AppointmentsList({ appointments, onPaymentClick, selectedDate, onDateChange, isAdmin }: AppointmentListProps) {  
+  const router = useRouter();
+
   const formatDateTime = (date: Date) => {
     return new Intl.DateTimeFormat('pt-BR', {
       weekday: 'long',
@@ -29,6 +36,26 @@ export function AppointmentsList({ appointments, onPaymentClick, selectedDate, o
       hour: '2-digit',
       minute: '2-digit'
     }).format(date);
+  };
+
+  const handlePayManually = async (appointmentId: string) => {
+    try {
+      await payManually(appointmentId);
+      toast.success("Pagamento realizado com sucesso!");
+      router.refresh();
+    } catch {
+      toast.error("Erro ao realizar pagamento manual");
+    }
+  };
+
+  const handleCompleteAppointment = async (appointmentId: string) => {
+    try {
+      await completeAppointment(appointmentId);
+      toast.success("Agendamento marcado como completo!");
+      router.refresh();
+    } catch {
+      toast.error("Erro ao completar agendamento");
+    }
   };
 
   return (
@@ -64,16 +91,39 @@ export function AppointmentsList({ appointments, onPaymentClick, selectedDate, o
                   <p className="text-xs text-muted-foreground">
                     <strong>Status:</strong> {appointmentStatus[appointment.status as AppointmentStatus]}
                   </p>
-                  {appointment.status === 'waiting_payment' && (
-                    <div className="mt-4">
+                  
+                  {/* Botões de ação */}
+                  <div className="mt-4 space-y-2">
+                    {appointment.status === 'waiting_payment' && (
                       <Button 
                         onClick={() => onPaymentClick(appointment)}
                         className="w-full"
                       >
                         Realizar Pagamento
                       </Button>
-                    </div>
-                  )}
+                    )}
+                    
+                    {/* Botões de admin */}
+                    {isAdmin && appointment.status === 'waiting_payment' && (
+                      <Button 
+                        onClick={() => handlePayManually(appointment.id)}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        Pagar Manualmente
+                      </Button>
+                    )}
+                    
+                    {isAdmin && appointment.status === 'paid' && (
+                      <Button 
+                        onClick={() => handleCompleteAppointment(appointment.id)}
+                        variant="default"
+                        className="w-full"
+                      >
+                        Completar Agendamento
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
