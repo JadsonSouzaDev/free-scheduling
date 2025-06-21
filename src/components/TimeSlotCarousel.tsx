@@ -7,54 +7,79 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type TimeSlotCarouselProps = {
-  onTimeSelect: (time: string) => void;
+  onDateTimeSelect: (date: Date) => void;
+  timeSlots: Date[];
+  isLoading: boolean;
 }
 
-export function TimeSlotCarousel({ onTimeSelect }: TimeSlotCarouselProps) {
-  // Gerar horários das 08h às 22h com intervalos de 30 minutos
-  const generateTimeSlots = () => {
-    const slots = [];
-    const startHour = 8;
-    const endHour = 22;
-
-    for (let hour = startHour; hour <= endHour; hour++) {
-      // Adicionar horário com minutos :00
-      slots.push(`${hour.toString().padStart(2, "0")}:00`);
-
-      // Adicionar horário com minutos :30 (exceto para o último horário)
-      if (hour < endHour) {
-        slots.push(`${hour.toString().padStart(2, "0")}:30`);
-      }
-    }
-
-    return slots;
-  };
-
-  const timeSlots = generateTimeSlots();
+export function TimeSlotCarousel({ onDateTimeSelect, timeSlots, isLoading }: TimeSlotCarouselProps) {
   
-  // Inicializar com o primeiro horário já selecionado
-  const [selectedTime, setSelectedTime] = React.useState<string>(timeSlots[0]);
+  const [selecteDateTime, setSelectedDateTime] = React.useState<Date | undefined>(undefined);
   const [currentIndex, setCurrentIndex] = React.useState(0);
+  
+  // Atualizar quando timeSlots mudar
+  useEffect(() => {
+    if (timeSlots.length > 0) {
+      setSelectedDateTime(timeSlots[0]);
+      setCurrentIndex(0);
+    } else {
+      setSelectedDateTime(undefined);
+      setCurrentIndex(0);
+    }
+  }, [timeSlots]);
 
   useEffect(() => {
-    onTimeSelect(selectedTime);
-  }, [selectedTime, onTimeSelect]);
+    if (selecteDateTime) {
+      onDateTimeSelect(selecteDateTime);
+    }
+  }, [selecteDateTime, onDateTimeSelect]);
+
+  if (isLoading) {
+    return <div className="text-center text-sm text-muted-foreground">Carregando horários disponíveis...</div>;
+  }
+
+  if (timeSlots.length === 0) {
+    return <div className="text-center text-sm text-muted-foreground">Nenhum horário disponível para esta data</div>;
+  }
 
   const nextTime = () => {
     const newIndex = (currentIndex + 1) % timeSlots.length;
     setCurrentIndex(newIndex);
-    setSelectedTime(timeSlots[newIndex]); // Seleciona automaticamente
+    setSelectedDateTime(timeSlots[newIndex]); // Seleciona automaticamente
   };
 
   const prevTime = () => {
     const newIndex = (currentIndex - 1 + timeSlots.length) % timeSlots.length;
     setCurrentIndex(newIndex);
-    setSelectedTime(timeSlots[newIndex]); // Seleciona automaticamente
+    setSelectedDateTime(timeSlots[newIndex]); // Seleciona automaticamente
   };
 
-  const selectTime = (time: string) => {
-    setSelectedTime(time);
-    setCurrentIndex(timeSlots.indexOf(time));
+  const selectDateTime = (date: Date) => {
+    setSelectedDateTime(date);
+    setCurrentIndex(timeSlots.indexOf(date));
+  };
+
+  // Função para verificar se existem slots em um período específico
+  const hasSlotsInPeriod = (period: 'manha' | 'tarde' | 'noite') => {
+    switch (period) {
+      case 'manha':
+        return timeSlots.some(time => {
+          const hour = time.getHours();
+          return hour >= 8 && hour <= 11;
+        });
+      case 'tarde':
+        return timeSlots.some(time => {
+          const hour = time.getHours();
+          return hour >= 12 && hour <= 17;
+        });
+      case 'noite':
+        return timeSlots.some(time => {
+          const hour = time.getHours();
+          return hour >= 18 && hour <= 22;
+        });
+      default:
+        return false;
+    }
   };
 
   // Função para navegar para um período específico
@@ -65,21 +90,21 @@ export function TimeSlotCarousel({ onTimeSelect }: TimeSlotCarouselProps) {
       case 'manha':
         // Primeiro horário entre 08:00 e 11:30
         targetIndex = timeSlots.findIndex(time => {
-          const hour = parseInt(time.split(':')[0]);
+          const hour = time.getHours();
           return hour >= 8 && hour <= 11;
         });
         break;
       case 'tarde':
         // Primeiro horário entre 12:00 e 17:30
         targetIndex = timeSlots.findIndex(time => {
-          const hour = parseInt(time.split(':')[0]);
+          const hour = time.getHours();
           return hour >= 12 && hour <= 17;
         });
         break;
       case 'noite':
         // Primeiro horário entre 18:00 e 22:00
         targetIndex = timeSlots.findIndex(time => {
-          const hour = parseInt(time.split(':')[0]);
+          const hour = time.getHours();
           return hour >= 18 && hour <= 22;
         });
         break;
@@ -91,13 +116,13 @@ export function TimeSlotCarousel({ onTimeSelect }: TimeSlotCarouselProps) {
     }
     
     setCurrentIndex(targetIndex);
-    setSelectedTime(timeSlots[targetIndex]); // Seleciona automaticamente
+    setSelectedDateTime(timeSlots[targetIndex]); // Seleciona automaticamente
   };
 
   return (
     <div className="w-full">
       {/* Horário selecionado */}
-      {selectedTime && (
+      {selecteDateTime && (
         <div className="mb-4">
           {/* <p className="text-sm text-muted-foreground">Horário selecionado: {selectedTime}</p> */}
           {/* <p className="text-xl font-bold text-primary">{selectedTime}</p> */}
@@ -120,13 +145,13 @@ export function TimeSlotCarousel({ onTimeSelect }: TimeSlotCarouselProps) {
         <div className="flex-1 text-center">
           <Button
             variant={
-              selectedTime === timeSlots[currentIndex] ? "default" : "outline"
+              selecteDateTime === timeSlots[currentIndex] ? "default" : "outline"
             }
             size="sm"
-            onClick={() => selectTime(timeSlots[currentIndex])}
+            onClick={() => selectDateTime(timeSlots[currentIndex])}
             className="min-w-[100px] font-medium"
           >
-            {timeSlots[currentIndex]}
+            {timeSlots[currentIndex].toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           </Button>
         </div>
 
@@ -160,6 +185,7 @@ export function TimeSlotCarousel({ onTimeSelect }: TimeSlotCarouselProps) {
           variant="outline"
           size="sm"
           onClick={() => navigateToPeriod('manha')}
+          disabled={!hasSlotsInPeriod('manha')}
           className="text-xs"
         >
           Manhã
@@ -168,6 +194,7 @@ export function TimeSlotCarousel({ onTimeSelect }: TimeSlotCarouselProps) {
           variant="outline"
           size="sm"
           onClick={() => navigateToPeriod('tarde')}
+          disabled={!hasSlotsInPeriod('tarde')}
           className="text-xs"
         >
           Tarde
@@ -176,6 +203,7 @@ export function TimeSlotCarousel({ onTimeSelect }: TimeSlotCarouselProps) {
           variant="outline"
           size="sm"
           onClick={() => navigateToPeriod('noite')}
+          disabled={!hasSlotsInPeriod('noite')}
           className="text-xs"
         >
           Noite

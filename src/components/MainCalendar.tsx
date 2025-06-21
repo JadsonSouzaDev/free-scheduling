@@ -14,13 +14,14 @@ import { TimeSlotCarousel } from "@/components/TimeSlotCarousel";
 import { ModalForm } from "@/components/ModalForm";
 import { ptBR } from "react-day-picker/locale";
 import ModalPayment from "./ModalPayment";
+import { useCreateAppointment } from "@/app/contexts/appointment/appointment.hooks";
 
 export function MainCalendar() {
+  const { getTimeSlots, isGettingTimeSlots } = useCreateAppointment();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const [date, setDate] = React.useState<Date | undefined>(today);
   const [month, setMonth] = React.useState<Date | undefined>(today);
-  const [time, setTime] = React.useState<string | undefined>(undefined);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const [selectedDateTime, setSelectedDateTime] = React.useState<
@@ -29,19 +30,26 @@ export function MainCalendar() {
   const [qrCode, setQrCode] = React.useState<string | undefined>(undefined);
   const [phone, setPhone] = React.useState<string | undefined>(undefined);
   const [appointmentId, setAppointmentId] = React.useState<string | undefined>(undefined);
-  const handleSchedule = () => {
-    if (!date || !time) {
-      return;
+  const [timeSlots, setTimeSlots] = React.useState<Date[]>([]);
+
+  // Buscar timeSlots quando uma data for selecionada
+  React.useEffect(() => {
+    if (date) {
+      const fetchTimeSlots = async () => {
+        try {
+          const slots = await getTimeSlots(date);
+          setTimeSlots(slots);
+        } catch (error) {
+          console.error("Erro ao buscar horários:", error);
+          setTimeSlots([]);
+        }
+      };
+      
+      fetchTimeSlots();
     }
-    // Create date object with time
-    const dateWithTime = new Date(date);
-    dateWithTime.setHours(
-      parseInt(time.split(":")[0]),
-      parseInt(time.split(":")[1]),
-      0,
-      0
-    );
-    setSelectedDateTime(dateWithTime);
+  }, [date]);
+
+  const handleSchedule = () => {
     setIsConfirmModalOpen(true);
   };
 
@@ -60,6 +68,11 @@ export function MainCalendar() {
     setIsPaymentModalOpen(false);
   };
 
+  const handleSelect = (date: Date) => {
+    setDate(date);
+    setSelectedDateTime(undefined); // Reset selected time when date changes
+  };
+
   return (
     <>
       <Card className="w-full max-w-md border-none shadow-lg">
@@ -70,28 +83,35 @@ export function MainCalendar() {
         <CardContent className="flex flex-col items-center gap-3">
           <div className="flex">
             <Calendar
+              required
               locale={ptBR}
               mode="single"
               month={month}
               onMonthChange={setMonth}
               selected={date}
               className="p-0 m-0"
-              onSelect={setDate}
+              onSelect={handleSelect}
               disabled={(date) => {
                 return date.getTime() < today.getTime();
               }}
             />
           </div>
-          <div className="flex w-full">
-            <TimeSlotCarousel onTimeSelect={setTime} />
-          </div>
+          {date && (
+            <div className="flex w-full">
+              <TimeSlotCarousel 
+                onDateTimeSelect={setSelectedDateTime} 
+                timeSlots={timeSlots} 
+                isLoading={isGettingTimeSlots} 
+              />
+            </div>
+          )}
         </CardContent>
         <CardFooter>
           <div className="flex w-full justify-end">
             <Button
               className="w-full"
               onClick={handleSchedule}
-              disabled={!date || !time}
+              disabled={!selectedDateTime}
             >
               Agendar
             </Button>

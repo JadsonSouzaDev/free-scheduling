@@ -2,7 +2,14 @@
 
 import { neon } from "@neondatabase/serverless";
 import { PaggueGateway } from "@/app/gateways/paggue.gateway";
-import { Appointment, AppointmentData, PaymentData, AppointmentStatus, PaymentStatus, PaymentType } from "./appointment.model";
+import {
+  Appointment,
+  AppointmentData,
+  PaymentData,
+  AppointmentStatus,
+  PaymentStatus,
+  PaymentType,
+} from "./appointment.model";
 import { serializePhone } from "@/lib/phone";
 
 const APPOINTMENT_AMOUNT = 10;
@@ -15,11 +22,13 @@ export type CreateAppointmentData = {
 
 export async function createAppointment(input: CreateAppointmentData) {
   const sql = neon(`${process.env.DATABASE_URL}`);
-  const [appointmentData] = await sql`
+  const [appointmentData] = (await sql`
         INSERT INTO appointments (client_name, client_phone, date)
-        VALUES (${input.client_name}, ${serializePhone(input.client_phone)}, ${input.date})
+        VALUES (${input.client_name}, ${serializePhone(input.client_phone)}, ${
+    input.date
+  })
         RETURNING *
-    ` as [AppointmentData];
+    `) as [AppointmentData];
 
   const paggueGateway = PaggueGateway.getInstance();
   const pagguePayment = await paggueGateway.createPayment({
@@ -29,11 +38,11 @@ export async function createAppointment(input: CreateAppointmentData) {
     description: `Pagamento de sinal de agendamento do cliente ${input.client_name}, com o telefone ${input.client_phone} no valor de R$${APPOINTMENT_AMOUNT}`,
   });
 
-  const [paymentData] = await sql`
+  const [paymentData] = (await sql`
         INSERT INTO payments (appointment_id, external_id, amount, status, qr_code, type)
         VALUES (${appointmentData.id}, ${pagguePayment.hash}, ${APPOINTMENT_AMOUNT}, 'pending', ${pagguePayment.payment}, 'pix')
         RETURNING *
-    ` as [PaymentData];
+    `) as [PaymentData];
 
   const appointment = new Appointment({
     id: appointmentData.id,
@@ -57,7 +66,7 @@ export async function createAppointment(input: CreateAppointmentData) {
     },
   });
 
-  return {qrCode: appointment.payment.qrCode, appointmentId: appointment.id};
+  return { qrCode: appointment.payment.qrCode, appointmentId: appointment.id };
 
   // const appointment = new Appointment({
   //   ...appointmentData,
@@ -80,7 +89,7 @@ export async function deleteExpiredAppointments() {
       WHERE status = 'waiting_payment' AND created_at < NOW() - INTERVAL '5 minutes'
     )
   `;
-  
+
   await sql`
     DELETE FROM appointments
     WHERE status = 'waiting_payment' AND created_at < NOW() - INTERVAL '5 minutes'
@@ -91,8 +100,10 @@ export async function getAppointments(phone: string) {
   const sql = neon(`${process.env.DATABASE_URL}`);
 
   await deleteExpiredAppointments();
-  
-  const appointments = phone === 'admin' ? await sql`
+
+  const appointments =
+    phone === "admin"
+      ? await sql`
     SELECT 
       a.id,
       a.client_name,
@@ -113,7 +124,8 @@ export async function getAppointments(phone: string) {
     FROM appointments a
     INNER JOIN payments p ON a.id = p.appointment_id
     ORDER BY a.date ASC
-  ` : await sql`
+  `
+      : await sql`
     SELECT 
       a.id,
       a.client_name,
@@ -133,50 +145,55 @@ export async function getAppointments(phone: string) {
       p.updated_at as payment_updated_at
     FROM appointments a
     INNER JOIN payments p ON a.id = p.appointment_id
-    WHERE a.client_phone = ${'+55' + phone}
+    WHERE a.client_phone = ${"+55" + phone}
     ORDER BY a.date ASC
   `;
 
-  const formattedAppointments = appointments.map((row: Record<string, unknown>) => {
-    return new Appointment({
-      id: row.id as string,
-      client_name: row.client_name as string,
-      client_phone: row.client_phone as string,
-      date: row.date as Date,
-      status: row.status as AppointmentStatus,
-      created_at: row.created_at as Date,
-      updated_at: row.updated_at as Date,
-      payment: {
-        id: row.payment_id as string,
-        external_id: row.external_id as string,
-        amount: row.amount as number,
-        status: row.payment_status as PaymentStatus,
-        paid_at: row.paid_at as Date | null,
-        qr_code: row.qr_code as string,
-        type: row.type as PaymentType,
-        created_at: row.payment_created_at as Date,
-        updated_at: row.payment_updated_at as Date,
-        appointment_id: row.appointment_id as string,
-      },
-    });
-  });
+  const formattedAppointments = appointments.map(
+    (row: Record<string, unknown>) => {
+      return new Appointment({
+        id: row.id as string,
+        client_name: row.client_name as string,
+        client_phone: row.client_phone as string,
+        date: row.date as Date,
+        status: row.status as AppointmentStatus,
+        created_at: row.created_at as Date,
+        updated_at: row.updated_at as Date,
+        payment: {
+          id: row.payment_id as string,
+          external_id: row.external_id as string,
+          amount: row.amount as number,
+          status: row.payment_status as PaymentStatus,
+          paid_at: row.paid_at as Date | null,
+          qr_code: row.qr_code as string,
+          type: row.type as PaymentType,
+          created_at: row.payment_created_at as Date,
+          updated_at: row.payment_updated_at as Date,
+          appointment_id: row.appointment_id as string,
+        },
+      });
+    }
+  );
 
   return formattedAppointments;
 }
 
-export async function updatePaymentStatus(paymentId: string, status: PaymentStatus) {
+export async function updatePaymentStatus(
+  paymentId: string,
+  status: PaymentStatus
+) {
   const sql = neon(`${process.env.DATABASE_URL}`);
 
-  const [paymentData] = await sql`
+  const [paymentData] = (await sql`
     SELECT * FROM payments
     WHERE external_id = ${paymentId}
-  ` as [PaymentData];
+  `) as [PaymentData];
 
   if (!paymentData) {
-    throw new Error('Payment not found');
+    throw new Error("Payment not found");
   }
 
- // update the payment status to paid
+  // update the payment status to paid
   await sql`
     UPDATE payments
     SET status = ${status}
@@ -193,7 +210,10 @@ export async function updatePaymentStatus(paymentId: string, status: PaymentStat
   return paymentData;
 }
 
-export async function updateAppointmentStatus(appointmentId: string, status: AppointmentStatus) {
+export async function updateAppointmentStatus(
+  appointmentId: string,
+  status: AppointmentStatus
+) {
   const sql = neon(`${process.env.DATABASE_URL}`);
 
   await sql`
@@ -201,4 +221,43 @@ export async function updateAppointmentStatus(appointmentId: string, status: App
     SET status = ${status}
     WHERE id = ${appointmentId}
   `;
+}
+
+export async function getTimeSlots(start: Date, end: Date): Promise<Date[]> {
+  await deleteExpiredAppointments();
+  
+  const sql = neon(`${process.env.DATABASE_URL}`);
+
+  const timeSlots = await sql`
+   SELECT 
+    to_char(slot, 'HH24:MI') AS time,
+    COUNT(a.id) = 0 AS available
+  FROM generate_series(
+    ${start.toISOString()}, 
+    ${end.toISOString()}, 
+    interval '30 minutes'
+  ) AS slot
+  LEFT JOIN appointments a
+    ON a.date >= slot AND a.date < slot + interval '30 minutes'
+  GROUP BY slot
+  ORDER BY slot;
+  ` as { time: string, available: boolean }[];
+  
+
+  return timeSlots.filter((slot) => slot.available).map((slot) => {
+    const [hours, minutes] = slot.time.split(':');
+    
+    // Criar a data em UTC para evitar problemas de timezone
+    const date = new Date(Date.UTC(
+      start.getUTCFullYear(),
+      start.getUTCMonth(),
+      start.getUTCDate(),
+      parseInt(hours),
+      parseInt(minutes),
+      0,
+      0
+    ));
+    
+    return date;
+  });
 }
