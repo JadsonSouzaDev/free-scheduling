@@ -18,9 +18,10 @@ import { useRouter } from "next/navigation";
 interface ModalPaymentProps {
   isOpen: boolean;
   onClose: () => void;
-  phone: string;
   onPaymentSuccess?: () => void;
   onPaymentExpired?: () => void;
+  appointmentId: string;
+  phone: string;
   paymentData: {
     pixCode: string;
     amount: number;
@@ -31,11 +32,19 @@ interface ModalPaymentProps {
 export function ModalPayment({
   isOpen,
   onClose,
+  appointmentId,
   phone,
   onPaymentExpired,
   paymentData,
 }: ModalPaymentProps) {
-  const leftSeconds = Math.max(0, Math.floor((new Date(paymentData.createdAt.getTime() + 5 * 60 * 1000).getTime() - new Date().getTime()) / 1000));
+  const leftSeconds = Math.max(
+    0,
+    Math.floor(
+      (new Date(paymentData.createdAt.getTime() + 5 * 60 * 1000).getTime() -
+        new Date().getTime()) /
+        1000
+    )
+  );
   const [copied, setCopied] = React.useState(false);
   const [timeLeft, setTimeLeft] = React.useState(leftSeconds); // 5 minutos em segundos
   const [progress, setProgress] = React.useState(100);
@@ -49,8 +58,8 @@ export function ModalPayment({
         margin: 2,
         color: {
           dark: "#000000",
-          light: "#FFFFFF"
-        }
+          light: "#FFFFFF",
+        },
       });
       setQrCodeBase64(qrCodeDataURL);
     } catch (err) {
@@ -123,19 +132,75 @@ export function ModalPayment({
     }).format(value);
   };
 
+  // Função para verificar se o pagamento foi realizado
+  React.useEffect(() => {
+    if (!appointmentId) return;
+
+    const startTime = Date.now();
+    const TIMEOUT = 5 * 60 * 1000; // 5 minutos em milissegundos
+    let eventSource: EventSource | null = null;
+
+    const createEventSource = () => {
+      // Se já existe uma conexão, feche-a
+      if (eventSource) {
+        eventSource.close();
+      }
+
+      // Verifica se já passou do timeout
+      if (Date.now() - startTime >= TIMEOUT) {
+        console.log("Timeout atingido após 5 minutos");
+        return;
+      }
+
+      // Cria nova conexão
+      eventSource = new EventSource(
+        `/api/webhooks/paggue?appointmentId=${appointmentId}`
+      );
+
+      eventSource.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "payment" && data.appointmentId === appointmentId) {
+          let formattedPhone = phone.replace(/\D/g, "");
+          formattedPhone = formattedPhone.replace(/^55/, "");
+          toast.success("Pagamento realizado com sucesso!");
+          router.push(`/agendamentos?phone=${formattedPhone}`);
+          onClose();
+          if (eventSource) {
+            eventSource.close();
+          }
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error("SSE Error:", error);
+        if (eventSource) {
+          eventSource.close();
+        }
+
+        // Tenta reconectar após 1 segundo se ainda estiver dentro do timeout
+        if (Date.now() - startTime < TIMEOUT) {
+          setTimeout(createEventSource, 1000);
+        }
+      };
+    };
+
+    // Inicia a primeira conexão
+    createEventSource();
+
+    // Cleanup function
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [appointmentId, onClose, phone, router]);
+
   const handleOnClose = () => {
-    let formattedPhone = phone.replace(/\D/g, "");
-    formattedPhone = formattedPhone.replace(/^55/, "");
-    if (timeLeft > 0) {
-      toast.error("Pagamento ainda não realizado!");
-      router.push(`/agendamentos?phone=${formattedPhone}`);
-      onClose();
-    } else {
-      setQrCodeBase64("");
-      toast.success("Pagamento realizado com sucesso!");
-      router.push(`/agendamentos?phone=${formattedPhone}`);
-      onClose();
-    }
+    toast.error("Pagamento ainda não realizado!");
+    router.push(`/agendamentos?phone=${phone}`);
+    setQrCodeBase64("");
+    onClose();
   };
 
   return (

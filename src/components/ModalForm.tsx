@@ -16,7 +16,7 @@ import { useCreateAppointment } from "@/app/contexts/appointment/appointment.hoo
 interface ModalFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { qrCode: string, phone: string }) => void;
+  onSubmit: (data: { qrCode: string, phone: string, appointmentId: string }) => void;
   selectedDateTime?: Date;
 }
 
@@ -55,14 +55,14 @@ export function ModalForm({ isOpen, onClose, onSubmit, selectedDateTime }: Modal
     
     try {
       // Chama a action do servidor via SWR
-      const qrCode = await createAppointment({
+      const {qrCode, appointmentId} = await createAppointment({
         client_name: name.trim(),
         client_phone: phone,
         date: selectedDateTime,
       });
 
       // Chama o callback do componente pai
-      onSubmit({ qrCode, phone: phone.replace(/\D/g, "") });
+      onSubmit({ qrCode, phone: phone.replace(/\D/g, ""), appointmentId });
       
       // Limpa os campos após o envio
       setName("");

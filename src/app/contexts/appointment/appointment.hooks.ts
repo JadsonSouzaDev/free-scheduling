@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import useSWR, { mutate } from "swr";
-import { createAppointment, getAppointments, CreateAppointmentData } from "./appointment.action";
-import { Appointment } from "./appointment.model";
+import { mutate } from "swr";
+import { createAppointment, CreateAppointmentData } from "./appointment.action";
+
 
 // Hook para criar um novo appointment
 export function useCreateAppointment() {
@@ -32,20 +32,3 @@ export function useCreateAppointment() {
     isCreating,
   };
 }
-
-// Hook para buscar appointments usando a action
-export function useAppointments() {
-  const { data, error, isLoading, mutate } = useSWR<Appointment[]>(
-    "/appointments",
-    async () => {
-      return await getAppointments();
-    }
-  );
-
-  return {
-    appointments: data || [],
-    isLoading,
-    error,
-    mutate,
-  };
-} 

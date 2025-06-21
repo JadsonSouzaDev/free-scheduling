@@ -34,6 +34,7 @@ export function AppointmentsListWrapper({ appointments }: AppointmentsListWrappe
   const router = useRouter();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<{
+    appointmentId: string;
     phone: string;
     pixCode: string;
     amount: number;
@@ -42,6 +43,7 @@ export function AppointmentsListWrapper({ appointments }: AppointmentsListWrappe
 
   const handlePaymentClick = (appointment: SerializedAppointment) => {
     setSelectedPayment({
+      appointmentId: appointment.id,
       phone: appointment.clientPhone,
       pixCode: appointment.payment.qrCode,
       amount: appointment.payment.amount,
@@ -94,19 +96,10 @@ export function AppointmentsListWrapper({ appointments }: AppointmentsListWrappe
 
       {selectedPayment && (
         <ModalPayment
+          appointmentId={selectedPayment.appointmentId}
           isOpen={isPaymentModalOpen}
           phone={selectedPayment.phone}
           onClose={handlePaymentModalClose}
-          onPaymentSuccess={() => {
-            // Lógica quando o pagamento for confirmado
-            console.log("Pagamento realizado!");
-            handlePaymentModalClose();
-          }}
-          onPaymentExpired={() => {
-            // Lógica quando o pagamento expirar
-            console.log("Pagamento expirado!");
-            handlePaymentModalClose();
-          }}
           paymentData={selectedPayment}
         />
       )}

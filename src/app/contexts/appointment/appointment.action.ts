@@ -53,10 +53,11 @@ export async function createAppointment(input: CreateAppointmentData) {
       type: paymentData.type,
       created_at: paymentData.created_at,
       updated_at: paymentData.updated_at,
+      appointment_id: paymentData.appointment_id,
     },
   });
 
-  return appointment.payment.qrCode;
+  return {qrCode: appointment.payment.qrCode, appointmentId: appointment.id};
 
   // const appointment = new Appointment({
   //   ...appointmentData,
@@ -155,9 +156,49 @@ export async function getAppointments(phone: string) {
         type: row.type as PaymentType,
         created_at: row.payment_created_at as Date,
         updated_at: row.payment_updated_at as Date,
+        appointment_id: row.appointment_id as string,
       },
     });
   });
 
   return formattedAppointments;
+}
+
+export async function updatePaymentStatus(paymentId: string, status: PaymentStatus) {
+  const sql = neon(`${process.env.DATABASE_URL}`);
+
+  const [paymentData] = await sql`
+    SELECT * FROM payments
+    WHERE external_id = ${paymentId}
+  ` as [PaymentData];
+
+  if (!paymentData) {
+    throw new Error('Payment not found');
+  }
+
+ // update the payment status to paid
+  await sql`
+    UPDATE payments
+    SET status = ${status}
+    WHERE external_id = ${paymentId}
+  `;
+
+  // update the appointment status to paid
+  await sql`
+    UPDATE appointments
+    SET status = 'paid' 
+    WHERE id = ${paymentData.appointment_id}
+  `;
+
+  return paymentData;
+}
+
+export async function updateAppointmentStatus(appointmentId: string, status: AppointmentStatus) {
+  const sql = neon(`${process.env.DATABASE_URL}`);
+
+  await sql`
+    UPDATE appointments
+    SET status = ${status}
+    WHERE id = ${appointmentId}
+  `;
 }

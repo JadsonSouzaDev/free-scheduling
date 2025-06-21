@@ -26,6 +26,7 @@ export type PaymentData = {
   type: PaymentType;
   created_at: Date;
   updated_at: Date;
+  appointment_id: string;
 }
 
 export type AppointmentData = {

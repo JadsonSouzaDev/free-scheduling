@@ -28,6 +28,7 @@ export function MainCalendar() {
   >(undefined);
   const [qrCode, setQrCode] = React.useState<string | undefined>(undefined);
   const [phone, setPhone] = React.useState<string | undefined>(undefined);
+  const [appointmentId, setAppointmentId] = React.useState<string | undefined>(undefined);
   const handleSchedule = () => {
     if (!date || !time) {
       return;
@@ -48,10 +49,11 @@ export function MainCalendar() {
     setIsConfirmModalOpen(false);
   };
 
-  const handleFormSubmit = (data: { qrCode: string, phone: string }) => {
+  const handleFormSubmit = (data: { qrCode: string, phone: string, appointmentId: string }) => {
     setIsPaymentModalOpen(true);
     setPhone(data.phone);
     setQrCode(data.qrCode);
+    setAppointmentId(data.appointmentId);
   };
 
   const handlePaymentModalClose = () => {
@@ -108,14 +110,7 @@ export function MainCalendar() {
         isOpen={isPaymentModalOpen}
         phone={phone!}
         onClose={handlePaymentModalClose}
-        onPaymentSuccess={() => {
-          // Lógica quando o pagamento for confirmado
-          console.log("Pagamento realizado!");
-        }}
-        onPaymentExpired={() => {
-          // Lógica quando o pagamento expirar
-          console.log("Pagamento expirado!");
-        }}
+        appointmentId={appointmentId || ""}
         paymentData={{
           pixCode: qrCode || "",
           amount: 10.0,
