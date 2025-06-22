@@ -12,7 +12,7 @@ import {
 } from "./appointment.model";
 import { serializePhone } from "@/lib/phone";
 
-const APPOINTMENT_AMOUNT = 1;
+const APPOINTMENT_AMOUNT = 10;
 
 export type CreateAppointmentData = {
   client_name: string;
