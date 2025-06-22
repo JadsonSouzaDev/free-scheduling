@@ -145,7 +145,7 @@ export function AppointmentsList({
 
                   {/* Botões de ação */}
                   <div className="mt-4 space-y-2">
-                    {appointment.status === "waiting_payment" && (
+                    {!isAdmin && appointment.status === "waiting_payment" && (
                       <Button
                         onClick={() => onPaymentClick(appointment)}
                         className="w-full"
