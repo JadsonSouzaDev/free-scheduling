@@ -27,7 +27,6 @@ export function ModalForm({ isOpen, onClose, onSubmit, selectedDateTime }: Modal
   const { createAppointment, isCreating } = useCreateAppointment();
 
   const formatPhone = (value: string) => {
-    // Remove tudo que não é dígito
     const numbers = value.replace(/\D/g, "");
     
     // Aplica a máscara (99) 99999-9999
