@@ -1,20 +1,37 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Appointment, AppointmentStatus } from "@/app/contexts/appointment/appointment.model";
+import { Badge} from "@/components/ui/badge";
+import {
+  Appointment,
+  AppointmentStatus,
+} from "@/app/contexts/appointment/appointment.model";
 import { formatPhone } from "@/lib/phone";
 import { ConsultOtherPhoneButton } from "./ConsultOtherPhoneButton";
 import { DateFilter } from "./DateFilter";
-import { payManually, completeAppointment } from "@/app/contexts/appointment/appointment.action";
+import {
+  payManually,
+  completeAppointment,
+  deleteAppointment,
+} from "@/app/contexts/appointment/appointment.action";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { CancelAppointmentModal } from "./CancelAppointmentModal";
+import { useState } from "react";
 
 const appointmentStatus: Record<AppointmentStatus, string> = {
   waiting_payment: "Pagamento pendente",
   paid: "Pago",
-  completed: "Completo",    
+  completed: "Completo",
   cancelled: "Cancelado",
-}
+};
+
+const appointmentStatusBadge: Record<AppointmentStatus, 'default' | 'destructive' | 'secondary' | 'outline'> = {
+  waiting_payment: "default",
+  paid: "default",
+  completed: "default",
+  cancelled: "destructive",
+};
 
 type AppointmentListProps = {
   appointments: Appointment[];
@@ -22,19 +39,27 @@ type AppointmentListProps = {
   selectedDate?: Date;
   onDateChange: (date: Date | undefined) => void;
   isAdmin: boolean;
-}
+};
 
-export function AppointmentsList({ appointments, onPaymentClick, selectedDate, onDateChange, isAdmin }: AppointmentListProps) {  
+export function AppointmentsList({
+  appointments,
+  onPaymentClick,
+  selectedDate,
+  onDateChange,
+  isAdmin,
+}: AppointmentListProps) {
   const router = useRouter();
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
   const formatDateTime = (date: Date) => {
-    return new Intl.DateTimeFormat('pt-BR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("pt-BR", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(date);
   };
 
@@ -58,6 +83,26 @@ export function AppointmentsList({ appointments, onPaymentClick, selectedDate, o
     }
   };
 
+  const handleCancelAppointment = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setIsCancelModalOpen(true);
+  };
+
+  const handleConfirmCancelAppointment = async () => {
+    if (!selectedAppointment) return;
+    
+    try {
+      await deleteAppointment(selectedAppointment.id);
+      toast.success("Agendamento cancelado!");
+      router.refresh();
+    } catch {
+      toast.error("Erro ao cancelar agendamento");
+    } finally {
+      setSelectedAppointment(null);
+      setIsCancelModalOpen(false);
+    }
+  };
+
   return (
     <div className="space-y-4 w-full max-w-2xl">
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -67,10 +112,12 @@ export function AppointmentsList({ appointments, onPaymentClick, selectedDate, o
           <DateFilter selectedDate={selectedDate} onDateChange={onDateChange} />
         </div>
       </div>
-      
+
       {!appointments || appointments.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-8 space-y-4">
-          <div className="text-muted-foreground">Nenhum agendamento encontrado.</div>
+          <div className="text-muted-foreground">
+            Nenhum agendamento encontrado.
+          </div>
           <ConsultOtherPhoneButton />
         </div>
       ) : (
@@ -83,29 +130,33 @@ export function AppointmentsList({ appointments, onPaymentClick, selectedDate, o
               <CardContent className="-mt-4">
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">
-                    <strong>Telefone:</strong> {formatPhone(appointment.clientPhone)}
+                    <strong>Telefone:</strong>{" "}
+                    {formatPhone(appointment.clientPhone)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     <strong>Data:</strong> {formatDateTime(appointment.date)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    <strong>Status:</strong> {appointmentStatus[appointment.status as AppointmentStatus]}
+                    <strong>Status:</strong>{" "}
+                    <Badge variant={appointmentStatusBadge[appointment.status as AppointmentStatus] || "default"}>
+                      {appointmentStatus[appointment.status as AppointmentStatus]}
+                    </Badge>
                   </p>
-                  
+
                   {/* Botões de ação */}
                   <div className="mt-4 space-y-2">
-                    {appointment.status === 'waiting_payment' && (
-                      <Button 
+                    {appointment.status === "waiting_payment" && (
+                      <Button
                         onClick={() => onPaymentClick(appointment)}
                         className="w-full"
                       >
                         Realizar Pagamento
                       </Button>
                     )}
-                    
+
                     {/* Botões de admin */}
-                    {isAdmin && appointment.status === 'waiting_payment' && (
-                      <Button 
+                    {isAdmin && appointment.status === "waiting_payment" && (
+                      <Button
                         onClick={() => handlePayManually(appointment.id)}
                         variant="outline"
                         className="w-full"
@@ -113,14 +164,28 @@ export function AppointmentsList({ appointments, onPaymentClick, selectedDate, o
                         Pagar Manualmente
                       </Button>
                     )}
-                    
-                    {isAdmin && appointment.status === 'paid' && (
-                      <Button 
-                        onClick={() => handleCompleteAppointment(appointment.id)}
+
+                    {isAdmin && appointment.status === "paid" && (
+                      <Button
+                        onClick={() =>
+                          handleCompleteAppointment(appointment.id)
+                        }
                         variant="default"
                         className="w-full"
                       >
                         Completar Agendamento
+                      </Button>
+                    )}
+
+                    {isAdmin && appointment.status !== "completed" && (
+                      <Button
+                        onClick={() =>
+                          handleCancelAppointment(appointment)
+                        }
+                        variant="destructive"
+                        className="w-full"
+                      >
+                        Cancelar Agendamento
                       </Button>
                     )}
                   </div>
@@ -130,6 +195,15 @@ export function AppointmentsList({ appointments, onPaymentClick, selectedDate, o
           ))}
         </div>
       )}
+
+      {isCancelModalOpen && selectedAppointment && (
+        <CancelAppointmentModal
+          isOpen={isCancelModalOpen}
+          onClose={() => setIsCancelModalOpen(false)}
+          appointment={selectedAppointment}
+          onConfirm={handleConfirmCancelAppointment}
+        />
+      )}
     </div>
   );
-} 
+}

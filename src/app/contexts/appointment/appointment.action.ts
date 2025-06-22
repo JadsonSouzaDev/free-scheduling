@@ -310,3 +310,17 @@ export async function getTimeSlots(start: Date, end: Date): Promise<Date[]> {
     return date;
   });
 }
+
+export async function deleteAppointment(appointmentId: string) {
+  const sql = neon(`${process.env.DATABASE_URL}`);
+
+  await sql`
+    DELETE FROM payments
+    WHERE appointment_id = ${appointmentId}
+  `;
+
+  await sql`
+    DELETE FROM appointments
+    WHERE id = ${appointmentId}
+  `;
+}
