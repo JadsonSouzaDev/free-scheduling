@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { PhoneModal } from "./PhoneModal";
 
 interface PhoneModalWrapperProps {
@@ -10,6 +10,8 @@ interface PhoneModalWrapperProps {
 export function PhoneModalWrapper({ phone }: PhoneModalWrapperProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     // Se não há telefone na URL, abre o modal
@@ -25,10 +27,12 @@ export function PhoneModalWrapper({ phone }: PhoneModalWrapperProps) {
     // Remove caracteres especiais para usar na URL
     const cleanPhone = phoneNumber.replace(/\D/g, "");
     
+    // Cria novos search params
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("phone", cleanPhone);
+    
     // Navega para a mesma página com o parâmetro phone
-    const url = new URL(window.location.href);
-    url.searchParams.set("phone", cleanPhone);
-    router.push(url.pathname + url.search);
+    router.push(`${pathname}?${newSearchParams.toString()}`);
   };
 
   const handleModalClose = () => {
